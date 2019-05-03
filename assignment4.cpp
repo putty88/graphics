@@ -30,6 +30,11 @@ using namespace std;
 float EPSILON = 0.000001;
 // theta is the angle to rotate the scene
 float THETA = 0.0;
+vector<GLfloat> amb = {0.3, 0.3, 0.3};
+vector<GLfloat> light_source = {4.0, 4.0, 4.0};
+vector<GLfloat> camera = {2.0, 6.0, 5.0};
+vector<GLfloat> spec = {0.3, 0.3, 0.3};
+vector<GLfloat> diff = {0.3, 0.3, 0.3};
 
 /**************************************************
  *              Object Model Class                *
@@ -387,30 +392,15 @@ ObjectModel apply_shading(ObjectModel object_model, vector<GLfloat> light_source
     
     
     vector<GLfloat> points = object_model.get_points();
+    points = to_cartesian_coord(points);
     vector<GLfloat> normals = object_model.get_normals();
     vector<GLfloat> base_colors = object_model.get_base_colors();
-    //camera vector
-    /*vector<GLfloat> camera = {
-        a_x - c_x,
-        a_y - c_y,
-        a_z - c_z
-    };*/
-    /*float norm = 0;
-    for(int i = 0; i < 3; i++){
-        norm += math.pow(camera[i],2)
-    }
-    norm = math.sqrt(norm);*/
-    
-    //get_norm
-    //float norm = get_norm(camera);
-    //apply norm
-    //camera = apply_norm(camera, norm);
     
     for(int i = 0; i < points.size()/3; i++) {
         vector<GLfloat> light = {
-            points[i*3 + 0] - light_source[0],
-            points[i*3 + 1] - light_source[1],
-            points[i*3 + 2] - light_source[2]
+            -1*(points[i*3 + 0] - light_source[0]),
+            -1*(points[i*3 + 1] - light_source[1]),
+            -1*(points[i*3 + 2] - light_source[2])
         };
         GLfloat light_norm = get_norm(light);
         light = apply_norm(light, light_norm);
@@ -434,14 +424,14 @@ ObjectModel apply_shading(ObjectModel object_model, vector<GLfloat> light_source
                                       h);
     
         
-        I_r = base_colors[i*3 + 0] * amb[0] + diff[0] * n_dot_l + spec[0] *
-        pow(n_dot_h, m);
+        I_r = base_colors[i*3 + 0] * ((amb[0] + diff[0]) * n_dot_l + spec[0] *
+        pow(n_dot_h, m));
         
-        I_g = base_colors[i*3 + 1] * amb[1] + diff[1] * n_dot_l + spec[1] *
-        pow(n_dot_h, m);
+        I_g = base_colors[i*3 + 1] * ((amb[1] + diff[1]) * n_dot_l + spec[1] *
+        pow(n_dot_h, m));
         
-        I_b = base_colors[i*3 + 2] * amb[2] + diff[2] * n_dot_l + spec[2] *
-        pow(n_dot_h, m);
+        I_b = base_colors[i*3 + 2] * ((amb[2] + diff[2]) * n_dot_l + spec[2] *
+        pow(n_dot_h, m));
         
         
         colors.push_back(I_r);
@@ -494,16 +484,37 @@ void init_camera() {
     
 
 }
-
+ObjectModel box() {
+    vector<GLfloat> scene;
+    vector<GLfloat> box = build_box();
+    scene.insert(std::end(scene), std::begin(box), std::end(box));
+    
+    ObjectModel set_box;
+    set_box.set_points(scene);
+    set_box.set_normals(generate_normals(scene));
+    vector<GLfloat> box_color;
+    vector<GLfloat> purp = init_base_color(0.5,0,0.8);
+    for(int i = 0; i < 6; i++) {
+        box_color.insert(box_color.end(), purp.begin(), purp.end());
+    }
+    set_box.set_base_colors(box_color);
+    set_box = apply_shading(set_box, light_source, camera, amb, diff, spec, 1);
+    return set_box;
+}
+ObjectModel boxM = box();
 // Construct the scene using objects built from cubes/prisms
 vector<GLfloat> init_scene() {
     vector<GLfloat> scene;
     vector<GLfloat> cube = build_cube();
-    vector<GLfloat> box = build_box();
+    //vector<GLfloat> box = build_box();
 
-    scene.insert(std::end(scene), std::begin(box), std::end(box));
     
-    vector<GLfloat> prism = mat_mult(scaling_matrix(-0.2, 1.0, 1.0), cube);
+    
+    vector<GLfloat> box_points = boxM.get_points();
+    scene.insert(scene.end(), box_points.begin(), box_points.end());
+    
+    
+    /*vector<GLfloat> prism = mat_mult(scaling_matrix(-0.2, 1.0, 1.0), cube);
     prism = mat_mult(rotation_matrix_y(deg2rad(80)), prism);
     scene.insert(std::end(scene), std::begin(prism), std::end(prism));
     
@@ -525,7 +536,7 @@ vector<GLfloat> init_scene() {
     vector<GLfloat> table = mat_mult(scaling_matrix(6.0, -0.1, 6.0), cube);
     table = mat_mult(rotation_matrix_y(deg2rad(60)), table);
     table = mat_mult(translation_matrix(-0.5,-0.55, 0.9), table);
-    scene.insert(std::end(scene), std::begin(table), std::end(table));
+    scene.insert(std::end(scene), std::begin(table), std::end(table));*/
     
     // TODO: Build your scene here
 
@@ -535,6 +546,11 @@ vector<GLfloat> init_scene() {
 // Construct the color mapping of the scene
 vector<GLfloat> init_color() {
     vector<GLfloat> colors;
+    //vector<GLfloat> box_color;
+    
+    vector<GLfloat> box_points = box().get_colors();
+    colors.insert(colors.end(), box_points.begin(), box_points.end());
+    
     
     // TODO: Construct the base colors of the scene
     
