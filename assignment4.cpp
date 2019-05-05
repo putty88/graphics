@@ -379,6 +379,19 @@ vector<GLfloat> apply_norm (vector<GLfloat> v, GLfloat norm) {
     return v;
 }
 
+vector<GLfloat> vector_storage(vector<GLfloat> new_vec, vector<GLfloat> old_vec) {
+    for (int i = 0; i < old_vec.size(); i++) {
+        new_vec.push_back(old_vec[i]);
+    }
+    
+    return new_vec;
+}
+//Converts Object Model to Vector
+vector<GLfloat> om_to_vector(ObjectModel om, vector<GLfloat> new_vec) {
+    vector<GLfloat> om_points = om.get_points();
+    return vector_storage(om_points, new_vec);
+}
+
 // Allows for ambience (a vector of 3 values), diffusion (vector of 3 values) and specular (vector of 3 values)
 // as input to the shading equation
 ObjectModel apply_shading(ObjectModel object_model, vector<GLfloat> light_source, vector<GLfloat> camera,
@@ -510,7 +523,7 @@ vector<GLfloat> init_scene() {
 
     
     
-    vector<GLfloat> box_points = boxM.get_points();
+    vector<GLfloat> box_points = om_to_vector(boxM, scene);
     scene.insert(scene.end(), box_points.begin(), box_points.end());
     
     
@@ -546,10 +559,16 @@ vector<GLfloat> init_scene() {
 // Construct the color mapping of the scene
 vector<GLfloat> init_color() {
     vector<GLfloat> colors;
-    //vector<GLfloat> box_color;
+    vector<GLfloat> boxC;
     
+    colors.clear();/*
     vector<GLfloat> box_points = box().get_colors();
     colors.insert(colors.end(), box_points.begin(), box_points.end());
+    */
+    
+    boxC = vector_storage(boxM.get_colors(), colors);
+    colors.clear();
+    colors.insert(colors.end(), boxC.begin(), boxC.end());
     
     
     // TODO: Construct the base colors of the scene
